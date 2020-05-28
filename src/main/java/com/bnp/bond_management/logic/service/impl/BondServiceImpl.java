@@ -1,21 +1,23 @@
 package com.bnp.bond_management.logic.service.impl;
 
 
+import com.bnp.bond_management.database.repository.BondRepository;
 import com.bnp.bond_management.database.repository.ClientRepository;
 import com.bnp.bond_management.logic.mapper.LogicMapper;
 import com.bnp.bond_management.logic.model.Bond;
 import com.bnp.bond_management.logic.model.BondStatus;
-import com.bnp.bond_management.database.repository.BondRepository;
 import com.bnp.bond_management.logic.model.Client;
 import com.bnp.bond_management.logic.model.request.BondApplyRequest;
 import com.bnp.bond_management.logic.model.response.BondApplyResponse;
 import com.bnp.bond_management.logic.service.BondService;
 import com.bnp.bond_management.logic.service.BondValidationService;
 import com.bnp.bond_management.web.exception.BondNotFoundException;
+import com.bnp.bond_management.web.exception.ClientNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,20 +71,26 @@ public class BondServiceImpl implements BondService {
         BondApplyResponse response = new BondApplyResponse();
         validationService.validateBondApplication(bondApplyRequest);
 
-        List<Bond> bondsList = new ArrayList<>();
         Bond bond = logicMapper.mapToBondModel(repository.findById(bondApplyRequest.getBondId()).get());
         bond.setStatus(BondStatus.SOLD);
-        bondsList.add(bond);
 
         Client client = Client.builder()
                 .name(bondApplyRequest.getClient().getName())
                 .surname(bondApplyRequest.getClient().getSurname())
                 .bornNumber(bondApplyRequest.getClient().getBornNumber())
-                .bonds(bondsList)
                 .build();
 
-        Client clientAfterSave = logicMapper.mapToClientModel(clientRepository.save(logicMapper.mapToClientEntity(client)));
-        response.setClient(clientAfterSave);
+        com.bnp.bond_management.database.entity.Client clientEntity = logicMapper.mapToClientEntity(client);
+        clientEntity.add(logicMapper.mapToBondEntity(bond));
+
+        clientRepository.save(clientEntity);
+
+        Optional<com.bnp.bond_management.database.entity.Client> clientAfterSave = clientRepository.findClientByBornNumber(bondApplyRequest.getClient().getBornNumber());
+        if (clientAfterSave.isPresent()) {
+            response.setClient(logicMapper.mapToClientModel(clientAfterSave.get()));
+        } else {
+            throw new ClientNotFoundException(bondApplyRequest.getClient().getBornNumber());
+        }
         return response;
     }
 }

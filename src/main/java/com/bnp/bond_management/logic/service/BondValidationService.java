@@ -8,15 +8,10 @@ import com.bnp.bond_management.logic.model.request.BondApplyRequest;
 import com.bnp.bond_management.web.exception.ApiException;
 import com.bnp.bond_management.web.exception.BondApplicationNotAllowedException;
 import com.bnp.bond_management.web.exception.ClientNotFoundException;
-import com.bnp.bond_management.web.exception.ExceptionsEnum;
 import com.bnp.bond_management.web.exception.TooMoreBondsPerClientException;
-import com.bnp.bond_management.web.exception.error.ApiObjectError;
-import com.bnp.bond_management.web.exception.error.ApiSubError;
-import com.bnp.bond_management.web.exception.error.ApiValidationError;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -48,7 +43,7 @@ public class BondValidationService {
     }
 
     private void checkMaxNumberOfBondsPerClient(BondApplyRequest request) {
-        Optional<Client> client =  clientRepository.findById(request.getClient().getBornNumber());
+        Optional<Client> client =  clientRepository.findClientByBornNumber(request.getClient().getBornNumber());
         if (client.isPresent()) {
                 int numberOfBondsForThisClient = client.get().getBonds().size();
                 if (numberOfBondsForThisClient > MAX_NUMBER_OF_BONDS) {

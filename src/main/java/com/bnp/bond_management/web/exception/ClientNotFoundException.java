@@ -9,4 +9,8 @@ public class ClientNotFoundException extends ApiException {
     public ClientNotFoundException(String name, String surname, String bornNumber) {
         super(ExceptionsEnum.CLIENTS_NOT_FOUND.getExceptionKey(), "Client " + name + " " + surname + " with born number: " + bornNumber + ", not found. Please register new client.");
     }
+
+    public ClientNotFoundException(String bornNumber) {
+        super(ExceptionsEnum.CLIENTS_NOT_FOUND.getExceptionKey(), "Client with born number: " + bornNumber + ", not found. Please register new client.");
+    }
 }

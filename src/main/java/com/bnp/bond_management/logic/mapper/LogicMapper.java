@@ -2,6 +2,7 @@ package com.bnp.bond_management.logic.mapper;
 
 import com.bnp.bond_management.database.entity.Bond;
 import com.bnp.bond_management.database.entity.Client;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -19,4 +20,5 @@ public interface LogicMapper {
     Client mapToClientEntity(com.bnp.bond_management.logic.model.Client client);
 
     com.bnp.bond_management.logic.model.Client mapToClientModel(Client client);
+
 }

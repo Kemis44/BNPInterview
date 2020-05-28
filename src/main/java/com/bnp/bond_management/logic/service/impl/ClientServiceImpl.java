@@ -7,6 +7,7 @@ import com.bnp.bond_management.logic.model.request.CreateClientRequest;
 import com.bnp.bond_management.logic.model.response.CreateClientResponse;
 import com.bnp.bond_management.logic.service.ClientService;
 import com.bnp.bond_management.web.exception.ClientAlreadyExistException;
+import com.bnp.bond_management.web.exception.ClientNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,7 @@ public class ClientServiceImpl implements ClientService {
     public CreateClientResponse createNewClient(CreateClientRequest clientRequest) {
         CreateClientResponse response = new CreateClientResponse();
         Client client;
-        if (!clientRepository.findById(clientRequest.getClient().getBornNumber()).isPresent()) {
+        if (!clientRepository.findClientByBornNumber(clientRequest.getClient().getBornNumber()).isPresent()) {
             client = logicMapper.mapToClientModel(clientRepository.save(logicMapper.mapToClientEntity(clientRequest.getClient())));
             response.setClient(client);
         } else {
@@ -31,5 +32,10 @@ public class ClientServiceImpl implements ClientService {
         }
 
         return response;
+    }
+
+    @Override
+    public Client findClientById(String bornNumber) {
+        return logicMapper.mapToClientModel(clientRepository.findClientByBornNumber(bornNumber).orElseThrow(() -> new ClientNotFoundException(bornNumber)));
     }
 }

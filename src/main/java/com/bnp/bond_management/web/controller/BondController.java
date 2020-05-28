@@ -68,4 +68,10 @@ public class BondController {
         CreateClientResponseDTO createClientResponseDTO = apiMapper.mapToCreateClientResponseDTO(createClientResponse);
         return ResponseEntity.ok(createClientResponseDTO);
     }
+
+    @GetMapping(value = "/clients/{id}")
+    public ResponseEntity<ClientDTO> getClientById(@PathVariable("id") String bornNumber) {
+        ClientDTO clientDTO = apiMapper.mapToClientDTO(clientService.findClientById(bornNumber));
+        return ResponseEntity.ok(clientDTO);
+    }
 }
