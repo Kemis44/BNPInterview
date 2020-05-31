@@ -6,8 +6,8 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: create
-    show-sql: true
+      ddl-auto: create-drop
+    show-sql: false
     database-platform: org.hibernate.dialect.H2Dialect
   h2:
     console:

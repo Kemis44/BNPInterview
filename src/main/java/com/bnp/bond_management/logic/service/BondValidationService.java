@@ -1,9 +1,9 @@
 package com.bnp.bond_management.logic.service;
 
 import com.bnp.bond_management.database.entity.Client;
+import com.bnp.bond_management.database.model.BondStatus;
 import com.bnp.bond_management.database.repository.BondRepository;
 import com.bnp.bond_management.database.repository.ClientRepository;
-import com.bnp.bond_management.logic.model.BondStatus;
 import com.bnp.bond_management.logic.model.request.BondApplyRequest;
 import com.bnp.bond_management.web.exception.ApiException;
 import com.bnp.bond_management.web.exception.BondApplicationNotAllowedException;
@@ -43,9 +43,9 @@ public class BondValidationService {
     }
 
     private void checkMaxNumberOfBondsPerClient(BondApplyRequest request) {
-        Optional<Client> client =  clientRepository.findClientByBornNumber(request.getClient().getBornNumber());
+        Optional<Client> client =  clientRepository.findById(request.getClient().getBornNumber());
         if (client.isPresent()) {
-                int numberOfBondsForThisClient = client.get().getBonds().size();
+                int numberOfBondsForThisClient = client.get().getBonds() != null ? client.get().getBonds().size() : 0;
                 if (numberOfBondsForThisClient > MAX_NUMBER_OF_BONDS) {
                     throw new TooMoreBondsPerClientException(client.get().getBornNumber());
                 }
@@ -61,6 +61,4 @@ public class BondValidationService {
             throw new BondApplicationNotAllowedException("Bad time for application");
         }
     }
-
-
 }

@@ -1,23 +1,26 @@
 package com.bnp.bond_management.logic.service.impl;
 
 
+import com.bnp.bond_management.database.entity.Bond;
+import com.bnp.bond_management.database.entity.BondHistory;
+import com.bnp.bond_management.database.entity.Client;
+import com.bnp.bond_management.database.model.BondStatus;
 import com.bnp.bond_management.database.repository.BondRepository;
 import com.bnp.bond_management.database.repository.ClientRepository;
-import com.bnp.bond_management.logic.mapper.LogicMapper;
-import com.bnp.bond_management.logic.model.Bond;
-import com.bnp.bond_management.logic.model.BondStatus;
-import com.bnp.bond_management.logic.model.Client;
+import com.bnp.bond_management.logic.model.request.BondAdjustRequest;
 import com.bnp.bond_management.logic.model.request.BondApplyRequest;
+import com.bnp.bond_management.logic.model.response.BondAdjustResponse;
 import com.bnp.bond_management.logic.model.response.BondApplyResponse;
 import com.bnp.bond_management.logic.service.BondService;
 import com.bnp.bond_management.logic.service.BondValidationService;
+import com.bnp.bond_management.web.exception.ApiException;
 import com.bnp.bond_management.web.exception.BondNotFoundException;
-import com.bnp.bond_management.web.exception.ClientNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.transaction.Transactional;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +31,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BondServiceImpl implements BondService {
 
-    private final LogicMapper logicMapper;
     private final BondRepository repository;
     private final ClientRepository clientRepository;
     private final BondValidationService validationService;
@@ -47,10 +49,10 @@ public class BondServiceImpl implements BondService {
 
     @Override
     public List<Bond> getAllBonds() {
-        List<com.bnp.bond_management.database.entity.Bond> freeBonds = repository.findAll().stream()
+        List<Bond> freeBonds = repository.findAll().stream()
                 .filter(bond -> BondStatus.FREE.equals(bond.getStatus()))
                 .collect(Collectors.toList());
-        return logicMapper.mapToBondsModel(freeBonds);
+        return freeBonds;
     }
 
     @Override
@@ -59,7 +61,7 @@ public class BondServiceImpl implements BondService {
 
         Bond bond;
         if (foundBond.isPresent()) {
-            bond = logicMapper.mapToBondModel(foundBond.get());
+            bond = foundBond.get();
         } else {
             throw new BondNotFoundException(id);
         }
@@ -71,26 +73,65 @@ public class BondServiceImpl implements BondService {
         BondApplyResponse response = new BondApplyResponse();
         validationService.validateBondApplication(bondApplyRequest);
 
-        Bond bond = logicMapper.mapToBondModel(repository.findById(bondApplyRequest.getBondId()).get());
+        Bond bond = repository.findById(bondApplyRequest.getBondId()).get();
         bond.setStatus(BondStatus.SOLD);
 
-        Client client = Client.builder()
-                .name(bondApplyRequest.getClient().getName())
-                .surname(bondApplyRequest.getClient().getSurname())
-                .bornNumber(bondApplyRequest.getClient().getBornNumber())
-                .build();
+        BondHistory bondHistory = createFirstBondHistory(bond);
+        List<BondHistory> bondHistoryList = new ArrayList<>();
+        bondHistoryList.add(bondHistory);
+        bond.setBondHistoryList(bondHistoryList);
+        bondHistory.setBond(bond);
 
-        com.bnp.bond_management.database.entity.Client clientEntity = logicMapper.mapToClientEntity(client);
-        clientEntity.add(logicMapper.mapToBondEntity(bond));
+        Client client = clientRepository.findById(bondApplyRequest.getClient().getBornNumber()).get();
+        client.getBonds().add(bond);
+        bond.setClient(client);
 
-        clientRepository.save(clientEntity);
-
-        Optional<com.bnp.bond_management.database.entity.Client> clientAfterSave = clientRepository.findClientByBornNumber(bondApplyRequest.getClient().getBornNumber());
-        if (clientAfterSave.isPresent()) {
-            response.setClient(logicMapper.mapToClientModel(clientAfterSave.get()));
-        } else {
-            throw new ClientNotFoundException(bondApplyRequest.getClient().getBornNumber());
-        }
+        Client clientAfterSave = clientRepository.save(client);
+        response.setClient(clientAfterSave);
         return response;
+    }
+
+    @Override
+    public BondAdjustResponse adjustBond(BondAdjustRequest bondAdjustRequest) {
+        BondAdjustResponse bondAdjustResponse = new BondAdjustResponse();
+        Client client = clientRepository.findById(bondAdjustRequest.getClient().getBornNumber()).get();
+        Bond bond = repository.findById(bondAdjustRequest.getBondId()).get();
+        if (bond.getTerm() < bondAdjustRequest.getTerm()) {
+            bond.setTerm(bondAdjustRequest.getTerm());
+            bond.setCoupon(bond.getCoupon() * 0.9);
+
+            BondHistory newHistoryAfterAdjust = createBondHistoryAfterAdjustment(bond);
+            List<BondHistory> historyList = bond.getBondHistoryList();
+            historyList.add(newHistoryAfterAdjust);
+            newHistoryAfterAdjust.setBond(bond);
+
+
+            Client clientSavedAfterAdjust = clientRepository.save(client);
+
+            bondAdjustResponse.setClient(clientSavedAfterAdjust);
+            return bondAdjustResponse;
+        } else {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR.toString(), "New requested term: " + bondAdjustRequest.getTerm() + " is shorter then original: " + bond.getTerm() + ", this adjustment is not allowed!");
+        }
+    }
+
+    private BondHistory createFirstBondHistory(Bond bond) {
+        BondHistory bondHistory = BondHistory.builder()
+                .amount(bond.getAmount())
+                .coupon(bond.getCoupon())
+                .term(bond.getTerm())
+                .createdAt(LocalDate.now())
+                .build();
+        return bondHistory;
+    }
+
+    private BondHistory createBondHistoryAfterAdjustment(Bond bond) {
+        BondHistory bondHistory = BondHistory.builder()
+                .amount(bond.getAmount())
+                .coupon(bond.getCoupon())
+                .term(bond.getTerm())
+                .updatedAt(LocalDate.now())
+                .build();
+        return bondHistory;
     }
 }

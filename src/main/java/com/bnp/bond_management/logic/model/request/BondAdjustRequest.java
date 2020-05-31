@@ -1,5 +1,4 @@
-package com.bnp.bond_management.logic.model.response;
-
+package com.bnp.bond_management.logic.model.request;
 
 import com.bnp.bond_management.database.entity.Client;
 import lombok.AllArgsConstructor;
@@ -11,7 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BondApplyResponse {
+public class BondAdjustRequest {
 
     private Client client;
+    private Integer bondId;
+    private Integer term;
 }

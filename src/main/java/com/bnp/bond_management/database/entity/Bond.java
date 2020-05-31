@@ -1,8 +1,11 @@
 package com.bnp.bond_management.database.entity;
 
 
-import com.bnp.bond_management.logic.model.BondStatus;
+import com.bnp.bond_management.database.model.BondStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -25,6 +28,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Builder
 public class Bond {
 
     @Id
@@ -39,17 +43,9 @@ public class Bond {
     private double amount;
     @Column(name = "status")
     private BondStatus status;
-    @OneToMany(mappedBy = "bond", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "bond")
     private  List<BondHistory> bondHistoryList;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_bornNumber")
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.MERGE, CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH})
     private Client client;
-
-    public void add(BondHistory bondHistory) {
-        if(bondHistoryList == null) {
-            bondHistoryList = new ArrayList<>();
-        }
-        bondHistoryList.add(bondHistory);
-        bondHistory.setBond(this);
-    }
 }

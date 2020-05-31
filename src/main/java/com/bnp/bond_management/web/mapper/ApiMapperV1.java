@@ -1,16 +1,20 @@
 package com.bnp.bond_management.web.mapper;
 
 
-import com.bnp.bond_management.logic.model.Bond;
-import com.bnp.bond_management.logic.model.Client;
+import com.bnp.bond_management.database.entity.Bond;
+import com.bnp.bond_management.database.entity.Client;
+import com.bnp.bond_management.logic.model.request.BondAdjustRequest;
 import com.bnp.bond_management.logic.model.request.BondApplyRequest;
 import com.bnp.bond_management.logic.model.request.CreateClientRequest;
+import com.bnp.bond_management.logic.model.response.BondAdjustResponse;
 import com.bnp.bond_management.logic.model.response.BondApplyResponse;
 import com.bnp.bond_management.logic.model.response.CreateClientResponse;
 import com.bnp.bond_management.web.dto.v1.BondDTO;
 import com.bnp.bond_management.web.dto.v1.ClientDTO;
+import com.bnp.bond_management.web.dto.v1.request.BondAdjustRequestDTO;
 import com.bnp.bond_management.web.dto.v1.request.BondApplyRequestDTO;
 import com.bnp.bond_management.web.dto.v1.request.CreateClientRequestDTO;
+import com.bnp.bond_management.web.dto.v1.response.BondAdjustResponseDTO;
 import com.bnp.bond_management.web.dto.v1.response.BondApplyResponseDTO;
 import com.bnp.bond_management.web.dto.v1.response.CreateClientResponseDTO;
 
@@ -33,4 +37,7 @@ public interface ApiMapperV1 {
 
     ClientDTO mapToClientDTO(Client client);
 
+    BondAdjustRequest mapToBondAdjustRequest(BondAdjustRequestDTO bondAdjustRequestDTO);
+
+    BondAdjustResponseDTO mapToBondAdjustResponseDTO(BondAdjustResponse bondAdjustResponse);
 }
